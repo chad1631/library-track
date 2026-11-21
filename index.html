@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="LIBRARY TRACK" />
+  <title>LIBRARY TRACK – Bascaran National High School</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    #appFrame {
+      width: 100%;
+      height: 100dvh;
+      border: none;
+      display: block;
+      background: #f1f5f9;
+    }
+    /* Branded Splash Screen while Google Apps Script initializes */
+    #splashScreen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 50;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    #splashScreen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 28px rgba(37, 99, 235, 0.45);
+      margin-bottom: 18px;
+    }
+    .splash-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .splash-school {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #60a5fa;
+      margin-top: 4px;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      margin-top: 24px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* One-Tap Android Install Banner */
+    #installBanner {
+      position: fixed;
+      bottom: 78px;
+      left: 16px;
+      right: 16px;
+      max-width: 420px;
+      margin: 0 auto;
+      background: #0f172a;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      z-index: 60;
+    }
+    #installBanner.show {
+      display: flex;
+    }
+    .install-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-install {
+      background: #10b981;
+      color: #090d16;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 13px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-dismiss {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="splashScreen">
+    <div class="splash-logo">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      </svg>
+    </div>
+    <div class="splash-title">LIBRARY TRACK</div>
+    <div class="splash-school">Bascaran National High School</div>
+    <div class="spinner" id="splashSpinner"></div>
+    <p id="splashStatus" style="font-size: 12.5px; color: #94a3b8; margin-top: 12px;">Connecting to Google Sheets...</p>
+  </div>
+
+  <iframe id="appFrame" title="LIBRARY TRACK" allow="clipboard-read; clipboard-write"></iframe>
+
+  <div id="installBanner">
+    <div style="font-size: 13px; line-height: 1.3;">
+      <strong>Install LIBRARY TRACK</strong><br />
+      <span style="color: #94a3b8; font-size: 11.5px;">Open full-screen without browser bar</span>
+    </div>
+    <div class="install-actions">
+      <button type="button" class="btn-dismiss" onclick="document.getElementById('installBanner').classList.remove('show')">Later</button>
+      <button type="button" class="btn-install" id="btnTriggerInstall">Install</button>
+    </div>
+  </div>
+
+  <script>
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzf0fl_tiS95WhVKesnCYRHg7wuANOAPyNBeNfo58D5VBLPxWl78p7-THoM5OlAHW7q/exec";
+
+    const frame = document.getElementById('appFrame');
+    const splash = document.getElementById('splashScreen');
+
+    frame.src = GAS_WEB_APP_URL;
+    frame.addEventListener('load', () => {
+      splash.classList.add('hidden');
+    });
+    setTimeout(() => splash.classList.add('hidden'), 5000);
+
+    // Register Service Worker for Android Full-Screen PWA Installability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+      });
+    }
+
+    // Capture Android Chrome Install Prompt
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBanner').classList.add('show');
+    });
+
+    document.getElementById('btnTriggerInstall').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('installBanner').classList.remove('show');
+    });
+  </script>
+</body>
+</html>
